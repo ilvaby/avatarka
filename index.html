@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Говорящий мультяшный аватар</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: scale(1.02);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        /* Контейнер для аватара */
+        .avatar-container {
+            margin: 20px 0;
+            position: relative;
+            display: inline-block;
+        }
+
+        .avatar {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin: 0 auto;
+        }
+
+        /* Анимация мигания */
+        .avatar.blink .eyes {
+            height: 5px;
+        }
+
+        .avatar.speaking {
+            animation: bounce 0.5s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Лицо аватара */
+        .face {
+            text-align: center;
+        }
+
+        .eyes {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 15px;
+            transition: all 0.1s ease;
+        }
+
+        .eye {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .eye::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: #333;
+            border-radius: 50%;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+
+        .mouth {
+            width: 40px;
+            height: 20px;
+            background: #333;
+            border-radius: 0 0 20px 20px;
+            margin: 0 auto;
+            transition: all 0.1s ease;
+        }
+
+        .avatar.speaking .mouth {
+            height: 30px;
+            border-radius: 20px;
+        }
+
+        /* Текст для озвучки */
+        .text-input {
+            width: 100%;
+            padding: 15px;
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            font-size: 16px;
+            resize: vertical;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Кнопки */
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .voice-select {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 15px;
+            border: 2px solid #ddd;
+            font-size: 14px;
+            width: 100%;
+            max-width: 250px;
+            cursor: pointer;
+        }
+
+        .status {
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .preset-buttons button {
+            background: #f0f0f0;
+            color: #333;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .thinking {
+            animation: pulse 0.5s ease infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Говорящий аватар 🎭</h1>
+        
+        <!-- Аватар -->
+        <div class="avatar-container">
+            <div class="avatar" id="avatar">
+                <div class="face">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="mouth"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Выбор голоса -->
+        <select id="voiceSelect" class="voice-select">
+            <option value="">Загрузка голосов...</option>
+        </select>
+
+        <!-- Поле для ввода текста -->
+        <textarea id="textToSpeak" class="text-input" rows="3" placeholder="Напиши что-нибудь, и аватар это скажет... Например: Привет! Как дела?"></textarea>
+        
+        <!-- Кнопки-заготовки -->
+        <div class="preset-buttons">
+            <button onclick="setText('Привет! Как твои дела?')">👋 Привет</button>
+            <button onclick="setText('Какой сегодня прекрасный день!')">☀️ Комплимент</button>
+            <button onclick="setText('До скорой встречи!')">👋 Пока</button>
+        </div>
+
+        <!-- Кнопка говорить -->
+        <button id="speakBtn">🎤 СКАЗАТЬ</button>
+
+        <!-- Статус -->
+        <div id="status" class="status">✨ Напиши что-нибудь и нажми "Сказать" ✨</div>
+    </div>
+
+    <script>
+        // Ждём загрузки страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            const speakBtn = document.getElementById('speakBtn');
+            const textInput = document.getElementById('textToSpeak');
+            const statusDiv = document.getElementById('status');
+            const avatar = document.getElementById('avatar');
+            const voiceSelect = document.getElementById('voiceSelect');
+
+            let voices = [];
+            let currentUtterance = null;
+
+            // Функция для получения русских голосов
+            function loadVoices() {
+                return new Promise((resolve) => {
+                    function populateVoices() {
+                        const availableVoices = window.speechSynthesis.getVoices();
+                        const russianVoices = availableVoices.filter(voice => 
+                            voice.lang.includes('ru') || voice.name.toLowerCase().includes('russian')
+                        );
+                        
+                        // Очищаем селект
+                        voiceSelect.innerHTML = '';
+                        
+                        if (russianVoices.length > 0) {
+                            russianVoices.forEach(voice => {
+                                const option = document.createElement('option');
+                                option.value = voice.name;
+                                option.textContent = `${voice.name} (${voice.lang})`;
+                                voiceSelect.appendChild(option);
+                            });
+                            statusDiv.textContent = '✅ Голос загружен! Напиши текст и нажми "Сказать"';
+                        } else {
+                            // Если нет русских голосов, показываем все и предупреждаем
+                            const allVoices = availableVoices.filter(v => v.lang.includes('ru') || v.lang.includes('en'));
+                            if (allVoices.length > 0) {
+                                allVoices.forEach(voice => {
+                                    const option = document.createElement('option');
+                                    option.value = voice.name;
+                                    option.textContent = `${voice.name} (${voice.lang})`;
+                                    voiceSelect.appendChild(option);
+                                });
+                                statusDiv.textContent = '⚠️ Русских голосов не найдено, но есть другие. Выбери любой!';
+                            } else {
+                                statusDiv.textContent = '⚠️ Голоса не загружены. Попробуй обновить страницу.';
+                            }
+                        }
+                        resolve();
+                    }
+                    
+                    // Некоторые браузеры загружают голоса асинхронно
+                    if (window.speechSynthesis.getVoices().length > 0) {
+                        populateVoices();
+                    } else {
+                        window.speechSynthesis.onvoiceschanged = populateVoices;
+                    }
+                });
+            }
+
+            // Функция для анимации речи
+            function startSpeakingAnimation() {
+                avatar.classList.add('speaking');
+            }
+
+            function stopSpeakingAnimation() {
+                avatar.classList.remove('speaking');
+            }
+
+            // Функция мигания
+            function blink() {
+                avatar.classList.add('blink');
+                setTimeout(() => {
+                    avatar.classList.remove('blink');
+                }, 150);
+            }
+
+            // Мигаем каждые 3 секунды
+            setInterval(blink, 3000);
+
+            // Функция озвучки текста
+            async function speakText(text) {
+                if (!text.trim()) {
+                    statusDiv.textContent = '⚠️ Напиши что-нибудь сначала!';
+                    return;
+                }
+
+                // Останавливаем текущую речь, если есть
+                if (currentUtterance) {
+                    window.speechSynthesis.cancel();
+                }
+
+                // Создаём новое произношение
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ru-RU';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.2;
+                utterance.volume = 1.0;
+
+                // Устанавливаем выбранный голос
+                const selectedVoiceName = voiceSelect.value;
+                if (selectedVoiceName) {
+                    const voices = window.speechSynthesis.getVoices();
+                    const selectedVoice = voices.find(voice => voice.name === selectedVoiceName);
+                    if (selectedVoice) {
+                        utterance.voice = selectedVoice;
+                    }
+                }
+
+                // Анимация при начале речи
+                utterance.onstart = () => {
+                    startSpeakingAnimation();
+                    statusDiv.textContent = '🔊 Аватар говорит...';
+                };
+
+                utterance.onend = () => {
+                    stopSpeakingAnimation();
+                    statusDiv.textContent = '✅ Готово! Напиши ещё что-нибудь.';
+                    currentUtterance = null;
+                };
+
+                utterance.onerror = () => {
+                    stopSpeakingAnimation();
+                    statusDiv.textContent = '❌ Ошибка! Попробуй ещё раз.';
+                    currentUtterance = null;
+                };
+
+                currentUtterance = utterance;
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // Обработчик кнопки "Сказать"
+            speakBtn.addEventListener('click', () => {
+                const text = textInput.value.trim();
+                if (text) {
+                    speakText(text);
+                } else {
+                    statusDiv.textContent = '⚠️ Напиши текст в поле выше!';
+                    textInput.style.borderColor = '#f5576c';
+                    setTimeout(() => {
+                        textInput.style.borderColor = '#ddd';
+                    }, 1000);
+                }
+            });
+
+            // Enter в поле ввода (Ctrl+Enter или Cmd+Enter)
+            textInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    speakBtn.click();
+                }
+            });
+
+            // Загружаем голоса при старте
+            loadVoices();
+
+            // Пример текста для первого раза
+            setTimeout(() => {
+                if (textInput.value === '') {
+                    textInput.value = 'Привет! Я твой мультяшный аватар. Напиши что-нибудь, и я это скажу!';
+                }
+            }, 1000);
+        });
+
+        // Функция для кнопок-заготовок
+        function setText(text) {
+            document.getElementById('textToSpeak').value = text;
+            document.getElementById('status').textContent = '📝 Текст готов! Нажми "Сказать"';
+            document.getElementById('status').style.animation = 'pulse 0.5s ease';
+            setTimeout(() => {
+                document.getElementById('status').style.animation = '';
+            }, 500);
+        }
+    </script>
+</body>
+</html>
